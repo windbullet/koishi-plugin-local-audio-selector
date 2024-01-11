@@ -9,13 +9,18 @@
     "dist"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/windbullet/koishi-plugin-local-audio-selector",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/windbullet/koishi-plugin-local-audio-selector.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
     "plugin"
   ],
   "peerDependencies": {
-    "koishi": "4.16.3"
+    "koishi": "^4.16.3"
   },
   "dependencies": {
     "file-type": "^16.5.4"

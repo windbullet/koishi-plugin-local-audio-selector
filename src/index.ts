@@ -10,7 +10,7 @@ export const usage = `
 > 在配置项中指定的文件夹搜索
 
 点歌.上传 <链接> [文件名]  
-> 链接必须为音频文件的直链，不传入文件名时将用当前的时间戳作为文件名  
+> 链接必须为音频文件的直链，不传入文件名时将用上传者用户名和当前的时间戳作为文件名 
 > 文件下载至配置项中指定的文件夹  
 `
 
@@ -93,7 +93,7 @@ export function apply(ctx: Context, config: Config) {
     })
   
   ctx.command("点歌.上传 <link:string> [name:text]", {checkArgCount: true})
-    .usage("链接必须为直链，不传入name将用当前的时间戳作为文件名")
+    .usage("链接必须为直链，不传入name将使用上传者用户名和当前的时间戳作为文件名")
     .example("点歌.上传 https://music.koishi.koi/koishi.mp3 koishi歌")
     .action(async ({ session }, link, name) => {
       if (!config.allowUpload) return "上传功能已关闭"
@@ -102,7 +102,7 @@ export function apply(ctx: Context, config: Config) {
           let request = await ctx.http.get(link, { responseType: "stream" });
           let type = await filetype.fromStream(request)
           if (!type.mime.startsWith("audio")) return "文件类型错误，请确保链接为音频文件"
-          let fullPath = path.join(config.path, `${name ?? Date.now()}.${type.ext}`)
+          let fullPath = path.join(config.path, `${name ?? session.username + "-" + Date.now()}.${type.ext}`)
           let file = fs.createWriteStream(fullPath);
           request.pipe(file);
           return "上传成功"

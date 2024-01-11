@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-local-audio-selector",
-  "description": "在指定文件夹搜索或发送音频",
-  "version": "0.0.1",
+  "description": "在指定文件夹搜索发送或上传音频",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -9,7 +9,6 @@
     "dist"
   ],
   "license": "MIT",
-  "scripts": {},
   "keywords": [
     "chatbot",
     "koishi",
@@ -17,5 +16,8 @@
   ],
   "peerDependencies": {
     "koishi": "4.16.3"
+  },
+  "dependencies": {
+    "file-type": "^16.5.4"
   }
 }

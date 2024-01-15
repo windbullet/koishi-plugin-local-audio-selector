@@ -2,10 +2,17 @@ import { Context, Schema, Logger, h, noop } from 'koishi'
 import fs from 'fs'
 import path from 'path'
 import filetype from 'file-type';
+import {} from 'koishi-plugin-silk'
 
 export const name = 'local-audio-selector'
 
+export const inject = {
+  optional: ['silk']
+}
+
 export const usage = `
+官方QQ机器人需要在插件市场安装silk插件才能正常使用  
+
 点歌.搜索 <文本>   
 > 在配置项中指定的文件夹搜索
 
@@ -45,7 +52,6 @@ export const Config: Schema<Config> = Schema.intersect([
       })
     ])
   ])
-  
 ])
 
 export function apply(ctx: Context, config: Config) {
@@ -83,15 +89,27 @@ export function apply(ctx: Context, config: Config) {
         let fullPath = path.join(config.path, result[+inputNum - 1])
         let id = await session.send("正在发送...")
         try {
-          await session.send(h.audio(`file:///${fullPath}`))
-          session.bot.deleteMessage(session.event.channel.id, id[0])
+          if (session.platform === "qq") {
+            if (!ctx.silk) throw new Error("silk 服务未加载")
+            let data = await fs.promises.readFile(fullPath)
+            let res = await ctx.silk.encode(data, 48000)
+            await session.send(h.audio(Buffer.from(res.data), "audio/amr"))
+          } else {
+            await session.send(h.audio(`file:///${fullPath}`))
+          }
         } catch (err) {
           logger.warn("发送失败 " + err.stack)
           return "发送失败，请查看日志"
         }
+        try {
+          session.bot.deleteMessage(session.event.channel.id, id[0])
+        } catch {
+          noop()
+        }
       }
     })
   
+
   ctx.command("点歌.上传 <link:string> [name:text]", {checkArgCount: true})
     .usage("链接必须为直链，不传入name将使用上传者用户名和当前的时间戳作为文件名")
     .example("点歌.上传 https://music.koishi.koi/koishi.mp3 koishi歌")

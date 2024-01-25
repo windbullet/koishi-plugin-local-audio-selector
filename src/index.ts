@@ -147,10 +147,9 @@ export function apply(ctx: Context, config: Config) {
                   resolve(1)
                 } else {
                   let fullPath = path.join(config.path, `${name ?? session.username + "-" + Date.now()}.${type.ext}`)
-                  let exist: boolean
-                  fs.promises.access(fullPath, fs.constants.F_OK)
-                    .then(() => exist = true)
-                    .catch(() => exist = false)
+                  let exist = await fs.promises.access(fullPath, fs.constants.F_OK)
+                    .then(() => true)
+                    .catch(() => false)
                   if (exist) return resolve(2)
                   let writer = fs.createWriteStream(fullPath)
                   writer.write(chunk)

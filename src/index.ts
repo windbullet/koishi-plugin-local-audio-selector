@@ -3,17 +3,18 @@ import fs from 'fs'
 import path from 'path'
 import filetype from 'file-type';
 import {} from 'koishi-plugin-silk'
+import {} from 'koishi-plugin-ffmpeg'
 import { promisify } from "util";
 import stream from "stream";
 
 export const name = 'local-audio-selector'
 
 export const inject = {
-  optional: ['silk']
+  optional: ['silk', 'ffmpeg']
 }
 
 export const usage = `
-官方QQ机器人需要在插件市场安装silk插件才能正常使用  
+官方QQ机器人需要在插件市场安装silk和ffmpeg插件才能正常使用  
 
 点歌.搜索 <文本>   
 > 在配置项中指定的文件夹搜索
@@ -98,8 +99,14 @@ export function apply(ctx: Context, config: Config) {
         try {
           if (session.platform === "qq") {
             if (!ctx.silk) throw new Error("silk 服务未加载")
-            let data = await fs.promises.readFile(fullPath)
-            let res = await ctx.silk.encode(data, 48000)
+            if (!ctx.ffmpeg) throw new Error("ffmpeg 服务未加载")
+            let buf = fs.readFileSync(fullPath)
+            let data = await ctx.ffmpeg
+              .builder()
+              .input(buf)
+              .outputOption("-ar", '24000', '-ac', '1', '-f', 's16le')
+              .run('buffer')
+            let res = await ctx.silk.encode(data, 24000)
             await session.send(h.audio(Buffer.from(res.data), "audio/amr"))
           } else {
             await session.send(h.audio(`file:///${fullPath}`))

@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-local-audio-selector",
   "description": "在指定文件夹搜索发送或上传音频",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -23,7 +23,8 @@
     "koishi": "^4.16.6"
   },
   "devDependencies": {
-    "koishi-plugin-silk": "^0.1.0"
+    "koishi-plugin-silk": "^0.1.0",
+    "koishi-plugin-ffmpeg": "^1.1.0"
   },
   "dependencies": {
     "file-type": "^16.5.4"

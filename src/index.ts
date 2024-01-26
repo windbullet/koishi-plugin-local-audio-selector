@@ -26,6 +26,7 @@ export const usage = `
 
 export interface Config {
   path: string
+  samplingRate: string
   allowUpload: boolean
   whitelist?: string[]
   maxFileSize?: number
@@ -39,6 +40,9 @@ export const Config: Schema<Config> = Schema.intersect([
     })
       .description("音频文件所在的文件夹路径")
       .required(),
+    samplingRate: Schema.string()
+      .description("语音的采样率（需要安装ffmpeg插件）")
+      .default("24000"),
   }),
   Schema.intersect([
     Schema.object({
@@ -104,12 +108,23 @@ export function apply(ctx: Context, config: Config) {
             let data = await ctx.ffmpeg
               .builder()
               .input(buf)
-              .outputOption("-ar", '24000', '-ac', '1', '-f', 's16le')
+              .outputOption("-ar", config.samplingRate, '-ac', '1', '-f', 's16le')
               .run('buffer')
-            let res = await ctx.silk.encode(data, 24000)
+            let res = await ctx.silk.encode(data, +config.samplingRate)
             await session.send(h.audio(Buffer.from(res.data), "audio/amr"))
           } else {
-            await session.send(h.audio(`file:///${fullPath}`))
+            if (!ctx.ffmpeg) {
+              await session.send(h.audio(`file:///${fullPath}`))
+            } else {
+              let buf = fs.readFileSync(fullPath)
+              let type = await filetype.fromBuffer(buf)
+              let data = await ctx.ffmpeg
+                .builder()
+                .input(buf)
+                .outputOption("-ar", config.samplingRate, '-ac', '1', '-f', type.ext)
+                .run('buffer')
+              await session.send(h.audio(data, type.mime))
+            }
           }
         } catch (err) {
           logger.warn("发送失败 " + err.stack)

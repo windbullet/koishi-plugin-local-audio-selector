@@ -149,7 +149,7 @@ export function apply(ctx: Context, config: Config) {
           await session.send("正在上传...")
 
           let res = await ctx.http.head(link)
-          if (res["content-length"] / 1000 > config.maxFileSize) return "文件大小超过限制"
+          if (+res.get('content-length') / 1000 > config.maxFileSize) return "文件大小超过限制"
 
           let response = await ctx.http("get", link, { responseType: "stream" });
           let responseStream = stream.Readable.from(response.data)

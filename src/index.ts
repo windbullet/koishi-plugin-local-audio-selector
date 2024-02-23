@@ -151,10 +151,7 @@ export function apply(ctx: Context, config: Config) {
           let res = await ctx.http.head(link)
           if (res["content-length"] / 1000 > config.maxFileSize) return "文件大小超过限制"
 
-          let controller = new AbortController()
-          let signal = controller.signal
-          // @ts-ignore
-          let response = await ctx.http("get", link, { responseType: "stream", signal });
+          let response = await ctx.http("get", link, { responseType: "stream" });
           let responseStream = stream.Readable.from(response.data)
           try {
             let writer = await new Promise<any>(async resolve => {
@@ -175,10 +172,8 @@ export function apply(ctx: Context, config: Config) {
               })
             })            
             if (writer === 2) {
-              controller.abort()
               return "已存在同名文件"
             } else if (writer === 1) {
-              controller.abort()
               return "文件类型错误，请确保链接为音频文件"
             }
 

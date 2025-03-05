@@ -16,10 +16,10 @@ export const inject = {
 export const usage = `
 官方QQ机器人需要在插件市场安装silk和ffmpeg插件才能正常使用  
 
-点歌.搜索 <文本>   
+音频.搜索 <文本>   
 > 在配置项中指定的文件夹搜索
 
-点歌.上传 <链接> [文件名]  
+音频.上传 <链接> [文件名]  
 > 链接必须为音频文件的直链，不传入文件名时将用上传者用户名和当前的时间戳作为文件名 
 > 文件下载至配置项中指定的文件夹  
 `
@@ -67,10 +67,10 @@ export const Config: Schema<Config> = Schema.intersect([
 const pipeline = promisify(stream.pipeline);
 
 export function apply(ctx: Context, config: Config) {
-  ctx.command("点歌")
+  ctx.command("音频")
 
-  ctx.command("点歌.搜索 <str:text>", {checkArgCount: true})
-    .example("点歌.搜索 OTHERWORLDLY")
+  ctx.command("音频.搜索 <str:text>", {checkArgCount: true})
+    .example("音频.搜索 OTHERWORLDLY")
     .action(async ({ session }, str) => {
       let logger = new Logger("local-audio-selector")
       let result = []
@@ -101,30 +101,17 @@ export function apply(ctx: Context, config: Config) {
         let fullPath = path.join(config.path, result[+inputNum - 1])
         let id = await session.send("正在发送...")
         try {
-          if (session.platform === "qq") {
-            if (!ctx.silk) throw new Error("silk 服务未加载")
-            if (!ctx.ffmpeg) throw new Error("ffmpeg 服务未加载")
+          if (!ctx.ffmpeg) {
+            await session.send(h.audio(`file:///${fullPath}`))
+          } else {
             let buf = fs.readFileSync(fullPath)
+            let type = await filetype.fromBuffer(buf)
             let data = await ctx.ffmpeg
               .builder()
               .input(buf)
-              .outputOption("-ar", config.samplingRate, '-ac', '1', '-f', 's16le')
+              .outputOption("-ar", config.samplingRate, '-ac', '1', '-f', type.ext)
               .run('buffer')
-            let res = await ctx.silk.encode(data, +config.samplingRate)
-            await session.send(h.audio(Buffer.from(res.data), "audio/amr"))
-          } else {
-            if (!ctx.ffmpeg) {
-              await session.send(h.audio(`file:///${fullPath}`))
-            } else {
-              let buf = fs.readFileSync(fullPath)
-              let type = await filetype.fromBuffer(buf)
-              let data = await ctx.ffmpeg
-                .builder()
-                .input(buf)
-                .outputOption("-ar", config.samplingRate, '-ac', '1', '-f', type.ext)
-                .run('buffer')
-              await session.send(h.audio(data, type.mime))
-            }
+            await session.send(h.audio(data, type.mime))
           }
         } catch (err) {
           logger.warn("发送失败 " + err.stack)
@@ -139,9 +126,9 @@ export function apply(ctx: Context, config: Config) {
     })
   
 
-  ctx.command("点歌.上传 <link:string> [name:text]", {checkArgCount: true})
+  ctx.command("音频.上传 <link:string> [name:text]", {checkArgCount: true})
     .usage("链接必须为直链，不传入name将使用上传者用户名和当前的时间戳作为文件名")
-    .example("点歌.上传 https://music.koishi.koi/koishi.mp3 koishi歌")
+    .example("音频.上传 https://music.koishi.koi/koishi.mp3 koishi歌")
     .action(async ({ session }, link, name) => {
       if (!config.allowUpload) return "上传功能已关闭"
       if (config.whitelist.length === 0 || config.whitelist.includes(session.event.user.id)) {
